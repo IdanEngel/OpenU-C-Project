@@ -2,7 +2,7 @@
 
 #ifndef GLOBALS_H
 #define GLOBALS_H
-
+#define NULL ((void *)0)
 /* Constants */
 #define MAX_LABEL_LENGTH 31
 #define MAX_SYMBOLS 1000

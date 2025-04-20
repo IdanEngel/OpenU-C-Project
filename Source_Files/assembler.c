@@ -1,54 +1,29 @@
-/* assembler.c */
-
+#include <ctype.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-// #include "assembler.h"
-// #include "macro_processor.h"
-// #include "first_pass.h"
-// #include "second_pass.h"
-// #include "output.h"
-// #include "errors.h"
-// #include "util.h"
 
-void run_assembler(char *file_name) {
-    char *input_file, *am_file;
-    int error_found = 0;
+#define MAX_LINE_LENGTH 100
+#define MAX_MACRO_COUNT 50
+#define MAX_MACRO_LENGTH 1000
+#define MAX_LABEL_LENGTH 31
 
-    /* Step 1: Add .as extension to input file */
-    input_file = add_extension(file_name, ".as");
+/* Forward declarations */
+void preprocess_macros(const char *output_filename, const char *input_filename);
+void first_pass(const char *filename);
 
-    /* Step 2: Preprocess macros */
-    if (!preprocess_file(input_file)) {
-        report_error("Macro preprocessing failed", input_file, 0);
-        free(input_file);
-        return;
-    }
+int main(int argc, char *argv[]) {
+  if (argc != 3) {
+    printf("Usage: %s <input file .as> <output file .am>\n", argv[0]);
+    return 1;
+  }
 
-    /* Step 3: Convert to .am file */
-    am_file = add_extension(file_name, ".am");
+  preprocess_macros(argv[2], argv[1]);
+  printf("Macro expansion complete. Output saved to %s\n", argv[1]);
 
-    /* Step 4: First pass */
-    if (first_pass(am_file, &error_found) == 0 && error_found) {
-        report_error("First pass failed", am_file, 0);
-        free(input_file);
-        free(am_file);
-        return;
-    }
+  first_pass(argv[1]);
 
-    /* Step 5: Second pass */
-    if (second_pass(am_file, &error_found) == 0 && error_found) {
-        report_error("Second pass failed", am_file, 0);
-        free(input_file);
-        free(am_file);
-        return;
-    }
-
-    /* Step 6: Done! Cleanup */
-    printf("File %s assembled successfully.\n", file_name);
-    free(input_file);
-    free(am_file);
+  return 0;
 }
-//
-// Created by ida24 on 10/04/2025.
-//
+
+/* (rest of the functions follow here...) */

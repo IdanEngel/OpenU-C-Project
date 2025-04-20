@@ -2,7 +2,7 @@
 
 #ifndef ERRORS_H
 #define ERRORS_H
-
+#define NULL ((void *)0)
 /**
  * @file errors.h
  * @brief Error reporting interface for the assembler.

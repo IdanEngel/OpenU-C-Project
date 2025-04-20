@@ -12,15 +12,7 @@
 
 #define MAX_LINE_LENGTH 81
 
-typedef struct {
-    char name[MAX_LABEL_LENGTH + 1];
-    int address;
-} EntryLabel;
 
-typedef struct {
-    char name[MAX_LABEL_LENGTH + 1];
-    int address;
-} ExternUse;
 
 int second_pass(const char *am_file, Symbol *symbol_table, int symbol_count,
                 unsigned short *code, int code_count,
@@ -96,4 +88,3 @@ int second_pass(const char *am_file, Symbol *symbol_table, int symbol_count,
 
     return 1;
 }
-a
