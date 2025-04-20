@@ -1,27 +1,34 @@
-/* globals.h */
-
 #ifndef GLOBALS_H
 #define GLOBALS_H
-#define NULL ((void *)0)
-/* Constants */
+
+#include "../Header_Files/instruction_tables.h"
+
+#define MAX_SYMBOLS 100
+#define MAX_CODE_ROWS 500
 #define MAX_LABEL_LENGTH 31
-#define MAX_SYMBOLS 1000
-#define MAX_LINE_LENGTH 81
-#define MAX_ARG_LEN 32
 
-/* IC initialization value as per MMN14 */
-#define IC_INIT 100
+typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
 
-/* Data type for tracking .entry labels */
 typedef struct {
-    char name[MAX_LABEL_LENGTH + 1]; /* Label name */
-    int address;                     /* Final address */
-} EntryLabel;
+    char name[MAX_LABEL_LENGTH];
+    int address;
+    SymbolType type;
+    int is_entry;
+    int is_external;
+} Symbol;
 
-/* Data type for tracking usage of .extern labels */
 typedef struct {
-    char name[MAX_LABEL_LENGTH + 1]; /* Label name */
-    int address;                     /* Address where it's used */
-} ExternUse;
+    int address;
+    char binary[25];
+} CodeRow;
+
+/* Declare as extern */
+extern Symbol symbol_table[MAX_SYMBOLS];
+extern int symbol_count;
+
+extern CodeRow code_table[MAX_CODE_ROWS];
+extern int code_count;
+
+extern int IC, DC, ICF, DCF;
 
 #endif /* GLOBALS_H */

@@ -1,80 +1,58 @@
 /* Placeholder comment */
 #include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/utils.h"
+#include "../Header_Files/parser.h"
+#include "../Header_Files/symbol_table.h"
+#include "../Header_Files/first_pass.h"
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
-#define MAX_LINE_LENGTH 100
-#define MAX_LABEL_LENGTH 31
-#define MAX_SYMBOLS 100
-#define MAX_CODE_ROWS 500
 
-typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
 
-typedef struct {
-    char name[MAX_LABEL_LENGTH];
-    int address;
-    SymbolType type;
-    int is_entry;
-    int is_external;
-} Symbol;
 
-typedef struct {
-    int address;
-    char binary[25];
-} CodeRow;
 
-Symbol symbol_table[MAX_SYMBOLS];
-int symbol_count = 0;
-CodeRow code_table[MAX_CODE_ROWS];
-int code_count = 0;
-int IC = 100;
-int DC = 0;
-int ICF = 0;
-int DCF = 0;
-
-int is_comment_or_empty(const char *line) {
-    return line[0] == ';' || line[0] == '\0';
-}
-
-void report_first_pass_error(const char *filename, int line_number, const char *message) {
-    printf("[File %s, Line %d] Error: %s\n", filename, line_number, message);
-}
-
-int is_valid_label(const char *label) {
-    int i;
-    if (!isalpha(label[0])) return 0;
-    for (i = 1; label[i] != '\0'; i++) {
-        if (!isalnum(label[i])) return 0;
-    }
-    if (get_operation(label) != NULL) return 0;
-    return 1;
-}
-
-int is_label_duplicate(const char *label) {
-    int i;
-    for (i = 0; i < symbol_count; i++) {
-        if (strcmp(symbol_table[i].name, label) == 0) {
-            return 1;
-        }
-    }
-    return 0;
-}
-
-void add_symbol(const char *name, int address, SymbolType type, int is_entry, int is_external) {
-    if (symbol_count < MAX_SYMBOLS) {
-        strncpy(symbol_table[symbol_count].name, name, MAX_LABEL_LENGTH);
-        symbol_table[symbol_count].address = address;
-        symbol_table[symbol_count].type = type;
-        symbol_table[symbol_count].is_entry = is_entry;
-        symbol_table[symbol_count].is_external = is_external;
-        symbol_count++;
-    }
-}
-
+/*int is_comment_or_empty(const char *line) {
+//    return line[0] == ';' || line[0] == '\0';
+//}
+//
+//void report_first_pass_error(const char *filename, int line_number, const char *message) {
+//    printf("[File %s, Line %d] Error: %s\n", filename, line_number, message);
+//}
+//
+//int is_valid_label(const char *label) {
+//    int i;
+//    if (!isalpha(label[0])) return 0;
+//    for (i = 1; label[i] != '\0'; i++) {
+//        if (!isalnum(label[i])) return 0;
+//    }
+//    if (get_operation(label) != NULL) return 0;
+//    return 1;
+//}
+//
+//int is_label_duplicate(const char *label) {
+//    int i;
+//    for (i = 0; i < symbol_count; i++) {
+//        if (strcmp(symbol_table[i].name, label) == 0) {
+//            return 1;
+//        }
+//    }
+//    return 0;
+//}
+//
+//void add_symbol(const char *name, int address, SymbolType type, int is_entry, int is_external) {
+//    if (symbol_count < MAX_SYMBOLS) {
+//        strncpy(symbol_table[symbol_count].name, name, MAX_LABEL_LENGTH);
+//        symbol_table[symbol_count].address = address;
+//        symbol_table[symbol_count].type = type;
+//        symbol_table[symbol_count].is_entry = is_entry;
+//        symbol_table[symbol_count].is_external = is_external;
+//        symbol_count++;
+//    }
+//}
+*/
 void add_code_row(int address) {
     if (code_count < MAX_CODE_ROWS) {
         code_table[code_count].address = address;
@@ -82,31 +60,31 @@ void add_code_row(int address) {
         code_count++;
     }
 }
-
-int is_valid_register(const char *operand) {
-    int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' && operand[1] >= '0' && operand[1] <= '7';
-    return result;
-}
-
-int is_valid_number(const char *s) {
-    if (*s == '-' || *s == '+') s++;
-    if (!*s) return 0;
-    while (*s) {
-        if (!isdigit(*s)) return 0;
-        s++;
-    }
-    return 1;
-}
-
-int looks_like_register(const char *operand) {
-    return operand[0] == 'r';
-}
+/*
+//int is_valid_register(const char *operand) {
+//    int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' && operand[1] >= '0' && operand[1] <= '7';
+//    return result;
+//}
+//
+//int is_valid_number(const char *s) {
+//    if (*s == '-' || *s == '+') s++;
+//    if (!*s) return 0;
+//    while (*s) {
+//        if (!isdigit(*s)) return 0;
+//        s++;
+//    }
+//    return 1;
+//}
+//
+//int looks_like_register(const char *operand) {
+//    return operand[0] == 'r';
+//}
 
 int get_expected_register_count(const char *opcode_name) {
     const Operation* op = get_operation(opcode_name);
     if (!op) return -1;
     return op->operand_count;
-}
+}*/
 
 /* Convert an integer to a binary string representation of a given width */
 void int_to_binary(int value, int width, char *output) {

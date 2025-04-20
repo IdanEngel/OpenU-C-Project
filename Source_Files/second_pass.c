@@ -5,7 +5,7 @@
 #include <string.h>
 #include "../Header_Files/second_pass.h"
 #include "../Header_Files/symbol_table.h"
-#include "../Header_Files/parser.h"
+#include "../Header_Files/parser_old.h"
 #include "../Header_Files/errors.h"
 #include "../Header_Files/utils.h"
 #include "../Header_Files/output.h"

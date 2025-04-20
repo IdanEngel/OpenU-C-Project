@@ -24,7 +24,6 @@ int is_register(const char* token);
 const Operation* get_operation(const char* name);
 AddressingMode get_addressing_mode(const char* operand);
 int get_expected_register_count(const char* opcode_name);
-void int_to_binary(int value, int width, char *output);
 
 
 #endif

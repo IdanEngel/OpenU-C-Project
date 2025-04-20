@@ -4,7 +4,7 @@
 #define SECOND_PASS_H
 
 #include "symbol_table.h"
-#include "parser.h"
+#include "parser_old.h"
 
 /**
  * @brief Executes the second pass of the assembler.

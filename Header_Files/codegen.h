@@ -3,7 +3,7 @@
 #ifndef CODEGEN_H
 #define CODEGEN_H
 #define NULL ((void *)0)
-#include "parser.h"
+#include "parser_old.h"
 #include "symbol_table.h"
 
 /**

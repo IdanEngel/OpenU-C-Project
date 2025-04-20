@@ -63,11 +63,3 @@ int get_expected_register_count(const char* opcode_name) {
     return op->operand_count;
 }
 
-/* Convert an integer to a binary string representation of a given width */
-void int_to_binary(int value, int width, char *output) {
-    int i;
-    for (i = width - 1; i >= 0; i--) {
-        output[width - 1 - i] = ((value >> i) & 1) ? '1' : '0';
-    }
-    output[width] = '\0';
-}

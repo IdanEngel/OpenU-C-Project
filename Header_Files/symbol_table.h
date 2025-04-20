@@ -4,7 +4,7 @@
 #define SYMBOL_TABLE_H
 
 #define MAX_LABEL_LENGTH 31
-#define MAX_SYMBOLS 1000
+#define MAX_SYMBOLS 100
 
 typedef enum {
     LABEL_CODE,
@@ -13,12 +13,33 @@ typedef enum {
     LABEL_ENTRY
 } LabelType;
 
+
+#define MAX_CODE_ROWS 500
+#define MAX_LABEL_LENGTH 31
+
+typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
+
 typedef struct {
-    char name[MAX_LABEL_LENGTH + 1]; /* 31 chars max + null terminator */
+    char name[MAX_LABEL_LENGTH];
     int address;
-    LabelType type;
+    SymbolType type;
+    int is_entry;
+    int is_external;
 } Symbol;
 
+typedef struct {
+    int address;
+    char binary[25];
+} CodeRow;
+
+/* Declare as extern */
+extern Symbol symbol_table[MAX_SYMBOLS];
+extern int symbol_count;
+
+extern CodeRow code_table[MAX_CODE_ROWS];
+extern int code_count;
+
+extern int IC, DC, ICF, DCF;
 /**
  * @brief Adds a symbol to the symbol table.
  *
@@ -27,10 +48,12 @@ typedef struct {
  * @param name Name of the symbol (label).
  * @param address Address value (IC or DC).
  * @param type Type of the label (code/data/extern).
+ * @param is_entry
+ * @param is_external
  * @return 1 if success, 0 if duplicate.
  */
-int add_symbol(Symbol *table, int *count, const char *name, int address, LabelType type);
-
+void add_symbol(const char *name, int address, SymbolType type, int is_entry,
+                int is_external);
 /**
  * @brief Finds a symbol in the table by name.
  *

@@ -1,36 +1,20 @@
-/* parser.h */
-
 #ifndef PARSER_H
 #define PARSER_H
 
-#define MAX_LINE_LENGTH 81
-#define MAX_ARG_LEN 32
+#include "../Header_Files/instruction_tables.h"
 
-typedef struct {
-    char *label;          /* e.g., "LOOP" from "LOOP: mov ..." */
-    char *opcode;         /* e.g., "mov" or ".data" */
-    char *args[2];        /* Up to 2 arguments */
-    int is_data;          /* 1 if .data or .string */
-    int is_extern;        /* 1 if .extern */
-    int is_entry;         /* 1 if .entry */
-    int is_command;       /* 1 if opcode is real command (mov, cmp, ...) */
-    int arg_count;        /* 0, 1, or 2 */
-    int error;            /* 1 if parsing error occurred */
-    char error_msg[100];  /* Explanation of the error */
-} Line;
+void int_to_binary(int value, int width, char *output);
+void add_binary_instruction(int opcode, AddressingMode src_mode, AddressingMode dest_mode,
+                            int src_reg, int dest_reg, int funct, int address);
+void add_symbol_operand(const char *symbol_name, int address);
+void encode_string_directive(const char *str, int base_address);
+void encode_data_directive(const int *values, int count, int base_address);
 
-/**
- * @brief Parses an assembly line into label/opcode/args structure.
- *
- * @param raw_line The text of the line.
- * @param line_num Line number (for error messages).
- * @return A Line struct with parsed components and error info.
- */
-Line parse_line(char *raw_line, int line_num);
-void add_binary_instruction(const Operation* op,
-                            AddressingMode src_mode,
-                            AddressingMode dest_mode,
-                            int src_reg,
-                            int dest_reg,
-                            int address);
+/* Connect to first_pass */
+void handle_instruction(const char *command, const char *operands, const char *filename, int line_number, int *ic);
+void handle_string_directive(const char *label, const char *value, int *dc);
+void handle_data_directive(const char *label, const int *values, int count, int *dc);
+void add_code_row(int address);
+
+
 #endif /* PARSER_H */
