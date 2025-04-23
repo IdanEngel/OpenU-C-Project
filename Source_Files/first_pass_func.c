@@ -1,43 +1,19 @@
 /* Placeholder comment */
 #include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/utils.h"
-#include "../Header_Files/codegen.h"
+#include "../Header_Files/first_pass.h"
+#include "../Header_Files/symbol_table.h"
+#include "../Header_Files/parser.h"
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 
+#define MAX_LINE_LENGTH 100
 #define MAX_LABEL_LENGTH 31
-#define MAX_LINE_LENGTH 31
-#define MAX_SYMBOLS 100
 #define MAX_CODE_ROWS 500
 
-
-/*typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
-
-typedef struct {
-    char name[MAX_LABEL_LENGTH];
-    int address;
-    SymbolType type;
-    int is_entry;
-    int is_external;
-} Symbol;
-
-typedef struct {
-    int address;
-    char binary[25];
-} CodeRow;
-*/
-Symbol symbol_table[MAX_SYMBOLS];
-int symbol_count = 0;
-CodeRow code_table[MAX_CODE_ROWS];
-unsigned int code[MAX_CODE_ROWS];
-int code_count = 0;
-int IC = 100;
-int DC = 0;
-int ICF = 0;
-int DCF = 0;
 
 int is_comment_or_empty(const char *line) {
     return line[0] == ';' || line[0] == '\0';
@@ -71,8 +47,9 @@ int is_label_duplicate(const char *label) {
     return 0;
 }
 
-void add_symbol(const char *name, int address, SymbolType type, int is_entry,
-                int is_external) {
+/*
+void add_symbol(const char *name, const int address, SymbolType type, const int is_entry,
+                const int is_external) {
     if (symbol_count < MAX_SYMBOLS) {
         strncpy(symbol_table[symbol_count].name, name, MAX_LABEL_LENGTH);
         symbol_table[symbol_count].address = address;
@@ -81,15 +58,8 @@ void add_symbol(const char *name, int address, SymbolType type, int is_entry,
         symbol_table[symbol_count].is_external = is_external;
         symbol_count++;
     }
-}
+} */
 
-void add_code_row(int address) {
-    if (code_count < MAX_CODE_ROWS) {
-        code_table[code_count].address = address;
-        strcpy(code_table[code_count].binary, "000000000000000000000000");
-        code_count++;
-    }
-}
 
 int is_valid_register(const char *operand) {
     int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' &&
@@ -118,9 +88,7 @@ int count_instruction_words(const Operation *op, char *operands_line,
     const char *src = NULL;
     const char *dest = NULL;
     const char *extraOp = NULL;
-    char operands_copy[MAX_LINE_LENGTH];
-    const char *operands;
-
+    char *only_operands;
 
     AddressingMode src_mode = -1, dest_mode = -1;
 
@@ -147,13 +115,12 @@ int count_instruction_words(const Operation *op, char *operands_line,
         }
     } else if (op->operand_count == 2) {
         char operand_copy[MAX_LINE_LENGTH];
-        char operand_split[MAX_LINE_LENGTH];
+        char operands_copy[MAX_LINE_LENGTH];
         strncpy(operand_copy, operands_line, MAX_LINE_LENGTH);
-        strncpy(operand_split, operands_line, MAX_LINE_LENGTH);
-        operands = strtok(NULL, " \n");
+        only_operands = strtok(NULL, " \n");
         strncpy(operands_copy, operands_line, MAX_LINE_LENGTH);
-        if (operands != NULL && strlen(operands) > 0 && strchr(operand_copy, ',') == NULL && strchr(operand_copy, ' ')
-            != NULL) {
+        if (only_operands != NULL && strlen(only_operands) > 0 && strchr(operand_copy, ',') == NULL &&
+            strchr(operand_copy, ' ') != NULL) {
             report_first_pass_error(filename, line_number, "Missing comma between operands.");
         } else {
             char *first = strtok(operands_copy, " ,\t");
@@ -207,27 +174,39 @@ int count_instruction_words(const Operation *op, char *operands_line,
     return count;
 }
 
-void binary_to_string(unsigned int word, char *out) {
-    int i;
-    for (i = 0; i < 24; i++) {
-        out[23 - i] = (word & (1 << i)) ? '1' : '0';
-    }
-    out[24] = '\0';
+
+void handle_instruction(const Operation *op, const char *operand_line, int address) {
+    char operand_copy[MAX_LINE_LENGTH];
+    char *src = NULL, *dest = NULL;
+    AddressingMode src_mode = NONE, dest_mode = NONE;
+    int src_reg = 0, dest_reg = 0;
+
+    strncpy(operand_copy, operand_line, MAX_LINE_LENGTH);
+    src = strtok(operand_copy, ",");
+    dest = strtok(NULL, ",");
+
+    trim_spaces(src);
+    trim_spaces(dest);
+
+    src_mode = get_addressing_mode(src);
+    dest_mode = get_addressing_mode(dest);
+
+    if (src_mode == REGISTER) src_reg = src[1] - '0';
+    if (dest_mode == REGISTER) dest_reg = dest[1] - '0';
+
+    add_binary_instruction(op->opcode, src_mode, dest_mode,
+                           src_reg, dest_reg, op->funct, address);
 }
 
 void first_pass(const char *filename) {
+    printf("==> Macro done. Running first pass...\n");
     FILE *file;
     char line[MAX_LINE_LENGTH];
     char label[MAX_LABEL_LENGTH];
-    char *command, *token, *operands;
-    char operands_copy[MAX_LINE_LENGTH];
+    char *command, *token;
     const Operation *op;
-    Line temp_line;
-    int i, line_number = 0;
-    short value;
-    int data_index = 0;
-    int start_ic;
-    char *arg_token;
+    int line_number = 0;
+    int i;
 
     file = fopen(filename, "r");
     if (!file) {
@@ -259,98 +238,89 @@ void first_pass(const char *filename) {
         if (!command) continue;
 
         if (strcmp(command, ".data") == 0) {
+            int values[MAX_LINE_LENGTH], count = 0;
+            token = strtok(NULL, ", \t\n");
+            while (token) {
+                values[count++] = atoi(token);
+                token = strtok(NULL, ", \t\n");
+            }
+            encode_data_directive(values, count, DC);
+        } else if (strcmp(command, ".string") == 0) {
+            token = strtok(NULL, "\"");
+            encode_string_directive(token, DC);
+        } else if (strcmp(command, ".extern") == 0) {
+            token = strtok(NULL, " \t\n");
+            if (token) add_symbol(token, 0, EXTERNAL, 0, 1);
+        } else if (strcmp(command, ".entry") == 0) {
+            continue;
+        } else {
+            op = get_operation(command);
+            token = strtok(NULL, "\n");
+            printf("Token: %s\n", token);
+            if (token == NULL) {
+                printf("Error: No operands provided for instruction %s\n", command);
+            }
+            handle_instruction(op, token, IC);
+        }
+
+        memset(line, 0, sizeof(line));
+    }
+    ICF = IC;
+    rewind(file);
+
+    while (fgets(line, sizeof(line), file)) {
+        line_number++;
+        trim_leading_spaces(line);
+        if (is_comment_or_empty(line))
+            continue;
+
+        label[0] = '\0';
+        if (strchr(line, ':')) {
+            sscanf(line, "%[^:]", label);
+            memmove(line, strchr(line, ':') + 1, strlen(strchr(line, ':')));
+            trim_leading_spaces(line);
+        }
+
+        command = strtok(line, " \t\n");
+        if (!command)
+            continue;
+
+        if (strcmp(command, ".data") == 0) {
             if (label[0])
-                add_symbol(label, IC + DC, DATA, 0, 0);
+                add_symbol(label, ICF + DC, DATA, 0, 0);
             token = strtok(NULL, ",\n");
             while (token) {
                 trim_leading_spaces(token);
-                value = (short) atoi(token);
-                if (code_count < MAX_CODE_ROWS) {
-                    code_table[code_count].address = IC + data_index;
-                    binary_to_string((unsigned short) value, code_table[code_count].binary);
-                    code_count++;
-                    data_index++;
+                if (!isdigit(token[0]) && !(token[0] == '-' && isdigit(token[1]))) {
+                    report_first_pass_error(filename, line_number,
+                                            "Invalid number in .data directive.");
                 }
+                add_code_row(ICF + DC);
                 DC++;
                 token = strtok(NULL, ",\n");
             }
-            continue;
         } else if (strcmp(command, ".string") == 0) {
             if (label[0])
-                add_symbol(label, IC + DC, DATA, 0, 0);
+                add_symbol(label, ICF + DC, DATA, 0, 0);
             token = strtok(NULL, "\"");
             if (token) {
                 for (i = 0; i < (int) strlen(token); i++) {
-                    if (code_count < MAX_CODE_ROWS) {
-                        code_table[code_count].address = IC + data_index;
-                        binary_to_string((unsigned short) token[i], code_table[code_count].binary);
-                        code_count++;
-                        data_index++;
-                        DC++;
-                    }
-                }
-                if (code_count < MAX_CODE_ROWS) {
-                    code_table[code_count].address = IC + data_index;
-                    binary_to_string(0, code_table[code_count].binary);
-                    code_count++;
-                    data_index++;
+                    add_code_row(ICF + DC);
                     DC++;
                 }
+                add_code_row(ICF + DC);
+                DC++;
             }
-            continue;
         } else if (strcmp(command, ".extern") == 0) {
             token = strtok(NULL, " \t\n");
             if (token)
                 add_symbol(token, 0, EXTERNAL, 0, 1);
-            continue;
-        } else if (strcmp(command, ".entry") == 0) {
-            continue;
-        }
-
-        op = get_operation(command);
-        if (!op) {
-            report_first_pass_error(filename, line_number, "Unknown instruction.");
-            continue;
-        }
-
-        if (label[0]) add_symbol(label, IC, CODE, 0, 0);
-
-        operands = strtok(NULL, "\n");
-        if (operands != NULL)
-            strncpy(operands_copy, operands, MAX_LINE_LENGTH);
-        else
-            operands_copy[0] = '\0';
-
-
-        memset(&temp_line, 0, sizeof(Line));
-        temp_line.opcode = command;
-        temp_line.arg_count = 0;
-
-        arg_token = strtok(operands_copy, ", \t");
-        while (arg_token && temp_line.arg_count < 2) {
-            temp_line.args[temp_line.arg_count++] = arg_token;
-            arg_token = strtok(NULL, ", \t");
-        }
-
-         start_ic = IC;
-        if (!encode_instruction_binary(temp_line, code, &IC)) {
-            report_first_pass_error(filename, line_number, "Failed to encode instruction.");
-            continue;
-        }
-
-        for (i = start_ic; i < IC; i++) {
-            if (code_count < MAX_CODE_ROWS) {
-                code_table[code_count].address = i;
-                binary_to_string(code[i], code_table[code_count].binary);
-                code_count++;
-            }
         }
     }
 
-    ICF = IC;
+    fclose(file);
     DCF = DC;
 
-    fclose(file);
     printf("\nSymbol Table:\n");
     for (i = 0; i < symbol_count; i++) {
         printf("%s -> %d [%s]\n", symbol_table[i].name, symbol_table[i].address,

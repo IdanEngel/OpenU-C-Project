@@ -25,4 +25,5 @@ add_library(untitled STATIC
         Header_Files/globals.h
         Header_Files/codegen.h
         Source_Files/codegen.c
-        Header_Files/parser.h)
+        Header_Files/parser.h
+        Source_Files/first_pass_func.c)

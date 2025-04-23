@@ -103,6 +103,12 @@ build CMakeFiles/untitled.dir/Source_Files/codegen.c.o: C_COMPILER__untitled_uns
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
 
+build CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/first_pass_func.c || cmake_object_order_depends_target_untitled
+  DEP_FILE = CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o.d
+  FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
+  OBJECT_DIR = CMakeFiles/untitled.dir
+  OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
+
 
 # =============================================================================
 # Link build statements for STATIC_LIBRARY target untitled
@@ -111,7 +117,7 @@ build CMakeFiles/untitled.dir/Source_Files/codegen.c.o: C_COMPILER__untitled_uns
 #############################################
 # Link the static library libuntitled.a
 
-build libuntitled.a: C_STATIC_LIBRARY_LINKER__untitled_Debug CMakeFiles/untitled.dir/Source_Files/assembler.c.o CMakeFiles/untitled.dir/Source_Files/macro_proc.c.o CMakeFiles/untitled.dir/Source_Files/utils.c.o CMakeFiles/untitled.dir/Source_Files/errors.c.o CMakeFiles/untitled.dir/Source_Files/first_pass.c.o CMakeFiles/untitled.dir/Source_Files/symbol_table.c.o CMakeFiles/untitled.dir/Source_Files/second_pass.c.o CMakeFiles/untitled.dir/Source_Files/output.c.o CMakeFiles/untitled.dir/Source_Files/codegen.c.o
+build libuntitled.a: C_STATIC_LIBRARY_LINKER__untitled_Debug CMakeFiles/untitled.dir/Source_Files/assembler.c.o CMakeFiles/untitled.dir/Source_Files/macro_proc.c.o CMakeFiles/untitled.dir/Source_Files/utils.c.o CMakeFiles/untitled.dir/Source_Files/errors.c.o CMakeFiles/untitled.dir/Source_Files/first_pass.c.o CMakeFiles/untitled.dir/Source_Files/symbol_table.c.o CMakeFiles/untitled.dir/Source_Files/second_pass.c.o CMakeFiles/untitled.dir/Source_Files/output.c.o CMakeFiles/untitled.dir/Source_Files/codegen.c.o CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o
   LANGUAGE_COMPILE_FLAGS = -ferror-limit=999 -g
   OBJECT_DIR = CMakeFiles/untitled.dir
   POST_BUILD = :

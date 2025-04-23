@@ -11,10 +11,8 @@ void encode_string_directive(const char *str, int base_address);
 void encode_data_directive(const int *values, int count, int base_address);
 
 /* Connect to first_pass */
-void handle_instruction(const char *command, const char *operands, const char *filename, int line_number, int *ic);
 void handle_string_directive(const char *label, const char *value, int *dc);
 void handle_data_directive(const char *label, const int *values, int count, int *dc);
-void add_code_row(int address);
 
 
 #endif /* PARSER_H */

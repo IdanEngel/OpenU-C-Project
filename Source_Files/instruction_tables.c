@@ -10,7 +10,7 @@
 #define MAX_OPERANDS 2
 
 
-/* Table of all operations */
+/* Table of all operations*/
 const Operation operations_table[] = {
     {"mov", 0, 0, 2},
     {"cmp", 1, 0, 2},
@@ -29,6 +29,7 @@ const Operation operations_table[] = {
     {"rts", 14, 0, 0},
     {"stop", 15, 0, 0}
 };
+
 
 const int operations_count = sizeof(operations_table) / sizeof(operations_table[0]);
 

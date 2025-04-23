@@ -7,7 +7,8 @@ typedef enum {
     IMMEDIATE = 0,   /* #value*/
     DIRECT = 1,      /* label*/
     RELATIVE = 2,    /* &label*/
-    REGISTER = 3     /* r0-r7*/
+    REGISTER = 3   /* r0-r7*/
+
 } AddressingMode;
 
 typedef struct {
