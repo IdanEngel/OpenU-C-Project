@@ -8,22 +8,14 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -ferror-limit=999")
 
 add_library(untitled STATIC
         Source_Files/assembler.c
-        Source_Files/macro_proc.c
         Header_Files/utils.h
         Source_Files/utils.c
-        Header_Files/errors.h
-        Source_Files/errors.c
         Header_Files/first_pass.h
         Source_Files/first_pass.c
         Source_Files/symbol_table.c
         Header_Files/symbol_table.h
-        Header_Files/parser_old.h
         Header_Files/second_pass.h
         Source_Files/second_pass.c
-        Header_Files/output.h
-        Source_Files/output.c
-        Header_Files/globals.h
         Header_Files/codegen.h
         Source_Files/codegen.c
-        Header_Files/parser.h
-        Source_Files/first_pass_func.c)
+)

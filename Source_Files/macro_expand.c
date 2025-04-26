@@ -4,6 +4,7 @@
 #include <stdlib.h>
 #include "../Header_Files/macro_expand.h"
 #include "../Header_Files/utils.h"
+#include "../Header_Files/assembler.h"
 
 #define MAX_LINE_LENGTH 100
 #define MAX_MACRO_COUNT 50
@@ -12,9 +13,7 @@
 Macro macros[MAX_MACRO_COUNT];
 int macro_count = 0;
 
-void report_macro_error(const char *input_filename,  int line_number, const char *message) {
-    printf("[File: %s, Line %d] Error: %s\n", input_filename, line_number, message);
-}
+
 
 void trim_trailing_spaces(char *line) {
     int len = strlen(line);
@@ -59,11 +58,11 @@ int find_macro(const char *name) {
 
 void store_macro(const char *input_filename, const char *name, const char *content, int line_number) {
     if (!isalpha(name[0])) {
-        report_macro_error(input_filename, line_number, "Macro name must start with a letter.");
+        report_errors(input_filename, line_number, "Macro name must start with a letter.");
         return;
     }
     if (find_macro(name) != -1) {
-        report_macro_error(input_filename, line_number, "Macro redefinition is not allowed.");
+        report_errors(input_filename, line_number, "Macro redefinition is not allowed.");
         return;
     }
     if (macro_count < MAX_MACRO_COUNT) {
@@ -75,7 +74,7 @@ void store_macro(const char *input_filename, const char *name, const char *conte
 
 void preprocess_macros(const char *input_filename, const char *output_filename) {
     FILE *input = fopen(input_filename, "r");
-    FILE *output = fopen(output_filename, "w");
+    FILE *output = fopen(output_filename , "w");
     char line[MAX_LINE_LENGTH];
     char macro_name[MAX_LINE_LENGTH];
     char macro_buffer[MAX_MACRO_LENGTH];
@@ -110,11 +109,11 @@ void preprocess_macros(const char *input_filename, const char *output_filename) 
 
         start_result = is_macro_start(trimmed_line, macro_name);
         if (start_result == -1) {
-            report_macro_error(input_filename, line_number, "Macro defined without a name.");
+            report_errors(input_filename, line_number, "Macro defined without a name.");
             continue;
         } else if (start_result == 1) {
             if (in_macro) {
-                report_macro_error(input_filename, line_number, "Nested macro definitions are not allowed.");
+                report_errors(input_filename, line_number, "Nested macro definitions are not allowed.");
                 continue;
             }
             in_macro = 1;
@@ -124,7 +123,7 @@ void preprocess_macros(const char *input_filename, const char *output_filename) 
 
         if (is_macro_end(trimmed_line)) {
             if (!in_macro) {
-                report_macro_error(input_filename, line_number, "mcroend found without preceding mcro.");
+                report_errors(input_filename, line_number, "mcroend found without preceding mcro.");
                 continue;
             }
             store_macro(input_filename, macro_name, macro_buffer, line_number);
@@ -151,7 +150,7 @@ void preprocess_macros(const char *input_filename, const char *output_filename) 
             }
         } else if (strncmp(trimmed_line, ".", 1) != 0 && strncmp(trimmed_line, ";", 1) != 0 && strlen(trimmed_line) > 0) {
             if (strchr(trimmed_line, ' ') == NULL) {
-                report_macro_error(input_filename, line_number, "Macro call to undefined macro.");
+                report_errors(input_filename, line_number, "Macro call to undefined macro.");
             }
             fprintf(output, "%s", original_line);
         } else {
@@ -160,7 +159,7 @@ void preprocess_macros(const char *input_filename, const char *output_filename) 
     }
 
     if (in_macro) {
-        report_macro_error(input_filename, line_number, "File ended before mcroend.");
+        report_errors(input_filename, line_number, "File ended before mcroend.");
     }
 
     fclose(input);

@@ -1,44 +1,12 @@
-##CC = gcc
-##CFLAGS = -ansi -Wall -pedantic
-##SRC = $(wildcard Source_Files/*.c)
-#
-##all: assembler
-##
-##assembler:
-##	$(CC) $(CFLAGS) -IHeader_Files -o assembler $(SRC)
-##
-##clean:
-##	rm -f assembler *.ob *.ent *.ext *.am
-#
-#
-#CC = gcc
-#CFLAGS = -ansi -pedantic -Wall -Wextra -std=c90
-#
-#SRC_DIR = Source_Files
-#SRC = $(SRC_DIR)/macro_expand.c
-#TARGET = macro_expand
-#
-#all: $(TARGET)
-#
-#$(TARGET): $(SRC)
-#	$(CC) $(CFLAGS) -o $(TARGET) $(SRC)
-#
-#run:
-#	./$(TARGET) testprog.as test_output.am
-#
-#clean:
-#	rm -f $(TARGET) *.o test_output.am
-
-
 # Compilation settings
 CC = gcc
 CFLAGS = -ansi -Wall -pedantic -g
-#GLOBAL_DEPS = globals.h
 EXE_DEPS = assembler.o macro_expand.o first_pass.o utils.o instruction_tables.o codegen.o second_pass.o
-#parser.o symbol_table.o
 # Input/output files
-INPUT_AS = testprog.as
-OUTPUT_AM = test.am
+INPUT_AS_FILES = $(wildcard ./*.as)
+
+#INPUT_AS = testprog.as
+#OUTPUT_AM = test.am
 
 # Executable
 assembler: $(EXE_DEPS) $(GLOBAL_DEPS)
@@ -66,37 +34,16 @@ codegen.o: ./Source_Files/codegen.c $(GLOBAL_DEPS)
 second_pass.o: ./Source_Files/second_pass.c $(GLOBAL_DEPS)
 	$(CC) -c ./Source_Files/second_pass.c $(CFLAGS) -o $@
 
-#parser.o: ./Source_Files/parser.c $(GLOBAL_DEPS)
-#	$(CC) -c ./Source_Files/parser.c $(CFLAGS) -o $@
-#symbol_table.o: ./Source_Files/symbol_table.c $(GLOBAL_DEPS)
-#	$(CC) -c ./Source_Files/symbol_table.c $(CFLAGS) -o $@
-#second_pass.o: ../SourceFiles/second_pass.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/second_pass.c $(CFLAGS) -o $@
-#
-#code_conversion.o: ../SourceFiles/code_conversion.c $(GLOBAL_DEPS)
-	#$(CC) -c ../SourceFiles/code_conversion.c $(CFLAGS) -o $@
 
-#data_strct.o: ../SourceFiles/data_strct.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/data_strct.c $(CFLAGS) -o $@
-#
-#table.o: ../SourceFiles/table.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/table.c $(CFLAGS) -o $@
-#
-#util.o: ../SourceFiles/util.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/util.c $(CFLAGS) -o $@
-#
-#Errors.o: ../SourceFiles/Errors.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/Errors.c $(CFLAGS) -o $@
-#
-#handle_text.o: ../SourceFiles/handle_text.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/handle_text.c $(CFLAGS) -o $@
-#
-#lexer.o: ../SourceFiles/lexer.c $(GLOBAL_DEPS)
-#	$(CC) -c ../SourceFiles/lexer.c $(CFLAGS) -o $@
 
-# Run assembler on input
+# Run assembler on all input files
 run: assembler
-	./assembler $(OUTPUT_AM) $(INPUT_AS)
+	./assembler
+#	for file in $(INPUT_AS_FILES); do \
+#		base=$${file%.as}; \
+#		echo "Running assembler on $$file..."; \
+#		./assembler $$base $$file; \
+#	done
 
 # Clean temporary files
 clean:

@@ -55,20 +55,8 @@ build CMakeFiles/untitled.dir/Source_Files/assembler.c.o: C_COMPILER__untitled_u
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
 
-build CMakeFiles/untitled.dir/Source_Files/macro_proc.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/macro_proc.c || cmake_object_order_depends_target_untitled
-  DEP_FILE = CMakeFiles/untitled.dir/Source_Files/macro_proc.c.o.d
-  FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/untitled.dir
-  OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
-
 build CMakeFiles/untitled.dir/Source_Files/utils.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/utils.c || cmake_object_order_depends_target_untitled
   DEP_FILE = CMakeFiles/untitled.dir/Source_Files/utils.c.o.d
-  FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/untitled.dir
-  OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
-
-build CMakeFiles/untitled.dir/Source_Files/errors.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/errors.c || cmake_object_order_depends_target_untitled
-  DEP_FILE = CMakeFiles/untitled.dir/Source_Files/errors.c.o.d
   FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
@@ -91,20 +79,8 @@ build CMakeFiles/untitled.dir/Source_Files/second_pass.c.o: C_COMPILER__untitled
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
 
-build CMakeFiles/untitled.dir/Source_Files/output.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/output.c || cmake_object_order_depends_target_untitled
-  DEP_FILE = CMakeFiles/untitled.dir/Source_Files/output.c.o.d
-  FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/untitled.dir
-  OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
-
 build CMakeFiles/untitled.dir/Source_Files/codegen.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/codegen.c || cmake_object_order_depends_target_untitled
   DEP_FILE = CMakeFiles/untitled.dir/Source_Files/codegen.c.o.d
-  FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
-  OBJECT_DIR = CMakeFiles/untitled.dir
-  OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
-
-build CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o: C_COMPILER__untitled_unscanned_Debug /home/idan/Maman14/OpenU-C-Project/Source_Files/first_pass_func.c || cmake_object_order_depends_target_untitled
-  DEP_FILE = CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o.d
   FLAGS = -ferror-limit=999 -g -std=gnu90 -fdiagnostics-color=always
   OBJECT_DIR = CMakeFiles/untitled.dir
   OBJECT_FILE_DIR = CMakeFiles/untitled.dir/Source_Files
@@ -117,7 +93,7 @@ build CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o: C_COMPILER__unti
 #############################################
 # Link the static library libuntitled.a
 
-build libuntitled.a: C_STATIC_LIBRARY_LINKER__untitled_Debug CMakeFiles/untitled.dir/Source_Files/assembler.c.o CMakeFiles/untitled.dir/Source_Files/macro_proc.c.o CMakeFiles/untitled.dir/Source_Files/utils.c.o CMakeFiles/untitled.dir/Source_Files/errors.c.o CMakeFiles/untitled.dir/Source_Files/first_pass.c.o CMakeFiles/untitled.dir/Source_Files/symbol_table.c.o CMakeFiles/untitled.dir/Source_Files/second_pass.c.o CMakeFiles/untitled.dir/Source_Files/output.c.o CMakeFiles/untitled.dir/Source_Files/codegen.c.o CMakeFiles/untitled.dir/Source_Files/first_pass_func.c.o
+build libuntitled.a: C_STATIC_LIBRARY_LINKER__untitled_Debug CMakeFiles/untitled.dir/Source_Files/assembler.c.o CMakeFiles/untitled.dir/Source_Files/utils.c.o CMakeFiles/untitled.dir/Source_Files/first_pass.c.o CMakeFiles/untitled.dir/Source_Files/symbol_table.c.o CMakeFiles/untitled.dir/Source_Files/second_pass.c.o CMakeFiles/untitled.dir/Source_Files/codegen.c.o
   LANGUAGE_COMPILE_FLAGS = -ferror-limit=999 -g
   OBJECT_DIR = CMakeFiles/untitled.dir
   POST_BUILD = :

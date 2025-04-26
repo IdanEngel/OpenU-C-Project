@@ -2,6 +2,7 @@
 #include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/utils.h"
 #include "../Header_Files/codegen.h"
+#include "../Header_Files/first_pass.h"
 #include "../Header_Files/assembler.h"
 #include <ctype.h>
 #include <stddef.h>
@@ -29,7 +30,15 @@ int is_comment_or_empty(const char *line) {
     return line[0] == ';' || line[0] == '\0';
 }
 
-
+/*
+void reset_global_data(void) {
+    symbol_count = 0;
+    code_count = 0;
+    extern_use_count = 0;
+    IC = 100;
+    DC = 0;
+    error_flag = 0;
+}*/
 
 int count_operands(const char *operands_line) {
     int count = 0;

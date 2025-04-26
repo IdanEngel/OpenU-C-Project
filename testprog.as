@@ -1,5 +1,5 @@
 .extern SUBR
-MAIN:   add     r3, SUB
+MAIN:   add     r3, SUBR
 LOOP:   prn     #48
         lea     STR, r6
         mcro    a_mc
