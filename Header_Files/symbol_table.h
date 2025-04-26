@@ -16,6 +16,9 @@ typedef enum {
 
 #define MAX_CODE_ROWS 500
 #define MAX_LABEL_LENGTH 31
+#define MAX_EXTERN_USES 100
+
+
 
 typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
 
@@ -32,6 +35,11 @@ typedef struct {
     char binary[25];
 } CodeRow;
 
+typedef struct {
+    char label[MAX_LABEL_LENGTH];
+    int address;
+} ExternUse;
+
 /* Declare as extern */
 extern Symbol symbol_table[MAX_SYMBOLS];
 extern int symbol_count;
@@ -39,6 +47,9 @@ extern int symbol_count;
 extern CodeRow code_table[MAX_CODE_ROWS];
 extern int code_count;
 
+extern ExternUse extern_use_table[MAX_EXTERN_USES];
+
+extern int extern_use_count;
 extern int IC, DC, ICF, DCF;
 /**
  * @brief Adds a symbol to the symbol table.

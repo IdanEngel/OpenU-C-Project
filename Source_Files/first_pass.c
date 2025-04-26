@@ -2,6 +2,7 @@
 #include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/utils.h"
 #include "../Header_Files/codegen.h"
+#include "../Header_Files/assembler.h"
 #include <ctype.h>
 #include <stddef.h>
 #include <stdio.h>
@@ -14,21 +15,6 @@
 #define MAX_CODE_ROWS 500
 
 
-/*typedef enum { CODE, DATA, EXTERNAL, ENTRY } SymbolType;
-
-typedef struct {
-    char name[MAX_LABEL_LENGTH];
-    int address;
-    SymbolType type;
-    int is_entry;
-    int is_external;
-} Symbol;
-
-typedef struct {
-    int address;
-    char binary[25];
-} CodeRow;
-*/
 Symbol symbol_table[MAX_SYMBOLS];
 int symbol_count = 0;
 CodeRow code_table[MAX_CODE_ROWS];
@@ -43,8 +29,22 @@ int is_comment_or_empty(const char *line) {
     return line[0] == ';' || line[0] == '\0';
 }
 
-void report_first_pass_error(const char *filename, int line_number, const char *message) {
-    printf("[File %s, Line %d] Error: %s\n", filename, line_number, message);
+
+
+int count_operands(const char *operands_line) {
+    int count = 0;
+    char temp[MAX_LINE_LENGTH];
+    char *token;
+
+    strncpy(temp, operands_line, MAX_LINE_LENGTH);
+    token = strtok(temp, ", \t");
+
+    while (token != NULL) {
+        count++;
+        token = strtok(NULL, ", \t");
+    }
+
+    return count;
 }
 
 
@@ -92,7 +92,7 @@ void add_code_row(int address) {
 }
 
 int is_valid_register(const char *operand) {
-    int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' &&
+    const int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' &&
                  operand[1] >= '0' && operand[1] <= '7';
     return result;
 }
@@ -119,11 +119,10 @@ int count_instruction_words(const Operation *op, char *operands_line,
     const char *dest = NULL;
     const char *extraOp = NULL;
     char operands_copy[MAX_LINE_LENGTH];
-    const char *operands;
+    /*const char *operands;*/
 
 
     AddressingMode src_mode = -1, dest_mode = -1;
-
     if (!op)
         return 0;
 
@@ -131,7 +130,7 @@ int count_instruction_words(const Operation *op, char *operands_line,
         dest = strtok(operands_line, ", \t");
         extraOp = strtok(NULL, ", \t");
         if (extraOp != NULL) {
-            report_first_pass_error(filename, line_number, "Too many operands for instruction.");
+            report_errors(filename, line_number, "Too many operands for instruction.");
         }
         if (dest != NULL) {
             while (isspace((unsigned char)*dest))
@@ -139,31 +138,41 @@ int count_instruction_words(const Operation *op, char *operands_line,
             dest_mode = get_addressing_mode(dest);
             if (looks_like_register(dest)) {
                 if (!is_valid_register(dest)) {
-                    report_first_pass_error(filename, line_number, "Invalid register name.");
+                    report_errors(filename, line_number, "Invalid register name.");
                 }
             }
             if (dest_mode != REGISTER)
                 count += 1;
         }
     } else if (op->operand_count == 2) {
+        const int op_count = op->operand_count;
         char operand_copy[MAX_LINE_LENGTH];
         char operand_split[MAX_LINE_LENGTH];
         strncpy(operand_copy, operands_line, MAX_LINE_LENGTH);
         strncpy(operand_split, operands_line, MAX_LINE_LENGTH);
-        operands = strtok(NULL, " \n");
+        /*operands = strtok(NULL, ", \t");*/
         strncpy(operands_copy, operands_line, MAX_LINE_LENGTH);
-        if (operands != NULL && strlen(operands) > 0 && strchr(operand_copy, ',') == NULL && strchr(operand_copy, ' ')
+        if (count_operands(operands_line) == op_count && strchr(operand_copy, ',') == NULL && strchr(operand_copy, ' ')
             != NULL) {
-            report_first_pass_error(filename, line_number, "Missing comma between operands.");
+            report_errors(filename, line_number, "Missing comma between operands.");
+            printf("strchr-> %s\n", strchr(operand_copy, ' '));
+            src = strtok(operand_copy, " ");
+            printf("operands_line-> %s\n", src);
+            dest = strtok(NULL, " ");
+            if (looks_like_register(src) && !is_valid_register(src)) {
+                report_errors(filename, line_number, "Invalid source operand register name.");
+            } else if (looks_like_register(dest) && !is_valid_register(dest)) {
+                report_errors(filename, line_number, "Invalid destination operand register name.");
+            }
         } else {
             char *first = strtok(operands_copy, " ,\t");
             char *second = strtok(NULL, " ,\t");
             char *extra = strtok(NULL, " ,\t");
 
             if (!first || !second) {
-                report_first_pass_error(filename, line_number, "Too few operands for instruction.");
+                report_errors(filename, line_number, "Too few operands for instruction.");
             } else if (extra) {
-                report_first_pass_error(filename, line_number, "Too many operands for instruction.");
+                report_errors(filename, line_number, "Too many operands for instruction.");
             } else {
                 src = strtok(operands_line, ",");
                 if (src != NULL) {
@@ -172,7 +181,7 @@ int count_instruction_words(const Operation *op, char *operands_line,
                     src_mode = get_addressing_mode(src);
                     if (looks_like_register(src)) {
                         if (!is_valid_register(src)) {
-                            report_first_pass_error(filename, line_number, "Invalid source operand register name.");
+                            report_errors(filename, line_number, "Invalid source operand register name.");
                             return 1;
                         }
                     }
@@ -185,7 +194,7 @@ int count_instruction_words(const Operation *op, char *operands_line,
                     dest_mode = get_addressing_mode(dest);
                     if (looks_like_register(dest)) {
                         if (!is_valid_register(dest)) {
-                            report_first_pass_error(filename, line_number,
+                            report_errors(filename, line_number,
                                                     "Invalid destination operand register name.");
                         }
                     }
@@ -215,23 +224,27 @@ void binary_to_string(unsigned int word, char *out) {
     out[24] = '\0';
 }
 
+void negative_int_to_binary(short value, char *binary_out) {
+    int i;
+    unsigned int uval = (unsigned int) ((int) value & 0xFFFFFF); /* 24 bits signed */
+    for (i = 23; i >= 0; i--) {
+        binary_out[23 - i] = ((uval >> i) & 1) ? '1' : '0';
+    }
+    binary_out[24] = '\0';
+}
+
 void first_pass(const char *filename) {
     FILE *file;
-    char line[MAX_LINE_LENGTH];
-    char label[MAX_LABEL_LENGTH];
-    char *command, *token, *operands;
-    char operands_copy[MAX_LINE_LENGTH];
+    char line[MAX_LINE_LENGTH], label[MAX_LABEL_LENGTH], *command, *token, *operands, operands_copy[MAX_LINE_LENGTH], *arg_token;
     const Operation *op;
     Line temp_line;
-    int i, line_number = 0;
+    int i, line_number = 0, data_index = 0, start_ic;
     short value;
-    int data_index = 0;
-    int start_ic;
-    char *arg_token;
 
     file = fopen(filename, "r");
     if (!file) {
         printf("Error: cannot open file %s\n", filename);
+        error_flag = 1;
         return;
     }
 
@@ -244,11 +257,11 @@ void first_pass(const char *filename) {
         if (strchr(line, ':')) {
             sscanf(line, "%[^:]", label);
             if (!is_valid_label(label)) {
-                report_first_pass_error(filename, line_number, "Invalid label name.");
+                report_errors(filename, line_number, "Invalid label name.");
                 continue;
             }
             if (is_label_duplicate(label)) {
-                report_first_pass_error(filename, line_number, "Duplicate label definition.");
+                report_errors(filename, line_number, "Duplicate label definition.");
                 continue;
             }
             memmove(line, strchr(line, ':') + 1, strlen(strchr(line, ':')));
@@ -267,7 +280,11 @@ void first_pass(const char *filename) {
                 value = (short) atoi(token);
                 if (code_count < MAX_CODE_ROWS) {
                     code_table[code_count].address = IC + data_index;
-                    binary_to_string((unsigned short) value, code_table[code_count].binary);
+                    if (value < 0) {
+                        negative_int_to_binary(value, code_table[code_count].binary);
+                    } else {
+                        binary_to_string((unsigned short) value, code_table[code_count].binary);
+                    }
                     code_count++;
                     data_index++;
                 }
@@ -309,7 +326,7 @@ void first_pass(const char *filename) {
 
         op = get_operation(command);
         if (!op) {
-            report_first_pass_error(filename, line_number, "Unknown instruction.");
+            report_errors(filename, line_number, "Unknown instruction.");
             continue;
         }
 
@@ -332,9 +349,14 @@ void first_pass(const char *filename) {
             arg_token = strtok(NULL, ", \t");
         }
 
-         start_ic = IC;
+        start_ic = IC;
+        if (!count_instruction_words(op, operands, filename, line_number)) {
+            report_errors(filename, line_number, "Operand validation failed.");
+            continue;
+        }
+
         if (!encode_instruction_binary(temp_line, code, &IC)) {
-            report_first_pass_error(filename, line_number, "Failed to encode instruction.");
+            report_errors(filename, line_number, "Failed to encode instruction.");
             continue;
         }
 

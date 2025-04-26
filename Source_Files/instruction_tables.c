@@ -5,6 +5,7 @@
 #include <stdio.h>
 #include <ctype.h>
 #include "../Header_Files/instruction_tables.h"
+#include "../Header_Files/symbol_table.h"
 
 #define MAX_OPCODE_NAME 10
 #define MAX_OPERANDS 2
@@ -30,6 +31,8 @@ const Operation operations_table[] = {
     {"stop", 15, 0, 0}
 };
 
+ExternUse extern_use_table[MAX_EXTERN_USES];
+int extern_use_count = 0;
 
 const int operations_count = sizeof(operations_table) / sizeof(operations_table[0]);
 

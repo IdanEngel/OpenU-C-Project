@@ -25,7 +25,6 @@
 #define OPCODE_RTS 14
 #define OPCODE_STOP 15
 
-
 /* Table of all operations */
 const Operation operations[] = {
     {"mov", 0, 0},
@@ -51,7 +50,6 @@ static int get_opcode(const char *mnemonic) {
     for (i = 0; i < 16; i++) {
         if (strcmp(mnemonic, operations[i].name) == 0)
             return operations[i].opcode;
-
     }
     return -1;
 }
@@ -65,21 +63,13 @@ int get_funct(const char *opcode_name) {
     return -1;
 }
 
-/*
-static int is_immediate(const char *arg) {
-    return (arg != NULL && arg[0] == '#');
-}*/
-
-
 void int_to_binary(int value, int width, char *output) {
     int i;
-    printf("int_to_binary: value = %d, width = %d\n", value, width);
     for (i = width - 1; i >= 0; i--) {
         output[width - 1 - i] = ((value >> i) & 1) ? '1' : '0';
     }
     output[width] = '\0';
 }
-
 
 int encode_instruction_binary(Line line, unsigned int *code, int *IC) {
     int opcode = get_opcode(line.opcode);
@@ -94,12 +84,26 @@ int encode_instruction_binary(Line line, unsigned int *code, int *IC) {
         src_mode = get_addressing_mode(line.args[0]);
         dest_mode = get_addressing_mode(line.args[1]);
 
-        if (is_register(line.args[0])) src_reg = line.args[0][1] - '0';
-        if (is_register(line.args[1])) dest_reg = line.args[1][1] - '0';
-        if (is_register(line.args[1])) dest_reg = line.args[1][2] - '0';
+        if (is_register(line.args[0])) {
+            if (line.args[0][0] == '@')
+                src_reg = line.args[0][2] - '0';
+            else
+                src_reg = line.args[0][1] - '0';
+        }
+        if (is_register(line.args[1])) {
+            if (line.args[1][0] == '@')
+                dest_reg = line.args[1][2] - '0';
+            else
+                dest_reg = line.args[1][1] - '0';
+        }
     } else if (line.arg_count == 1) {
         dest_mode = get_addressing_mode(line.args[0]);
-        if (is_register(line.args[0])) dest_reg = line.args[0][2] - '0';
+        if (is_register(line.args[0])) {
+            if (line.args[0][0] == '@')
+                dest_reg = line.args[0][2] - '0';
+            else
+                dest_reg = line.args[0][1] - '0';
+        }
     }
 
     word |= (opcode & 0x3F) << 18;
@@ -110,9 +114,7 @@ int encode_instruction_binary(Line line, unsigned int *code, int *IC) {
     word |= (funct & 0x1F) << 3;
     word |= 4; /* ARE = 100 (absolute) */
 
-    printf("DEBUG OPCODE=%d FUNCT=%d SRC_MODE=%d DEST_MODE=%d  \n", opcode, funct, src_mode, dest_mode);
     code[(*IC)++] = word;
-
 
     if (line.arg_count >= 1) {
         int i;
@@ -121,7 +123,7 @@ int encode_instruction_binary(Line line, unsigned int *code, int *IC) {
         for (i = 0; i < line.arg_count; i++) {
             if (line.args[i][0] == '#') {
                 val = atoi(line.args[i] + 1);
-                 bin = ((unsigned int)(val & 0x1FFFFF) << 3);  /* Keep 21 bits */
+                bin = ((unsigned int)(val & 0x1FFFFF) << 3);  /* Keep 21 bits */
                 bin |= 4;  /* ARE = 100 */
                 code[(*IC)++] = bin;
             } else if (is_register(line.args[i])) {

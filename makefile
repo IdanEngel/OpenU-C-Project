@@ -34,7 +34,7 @@
 CC = gcc
 CFLAGS = -ansi -Wall -pedantic -g
 #GLOBAL_DEPS = globals.h
-EXE_DEPS = assembler.o macro_expand.o first_pass.o utils.o instruction_tables.o codegen.o
+EXE_DEPS = assembler.o macro_expand.o first_pass.o utils.o instruction_tables.o codegen.o second_pass.o
 #parser.o symbol_table.o
 # Input/output files
 INPUT_AS = testprog.as
@@ -59,8 +59,12 @@ macro_expand.o: ./Source_Files/macro_expand.c $(GLOBAL_DEPS)
 
 first_pass.o: ./Source_Files/first_pass.c $(GLOBAL_DEPS)
 	$(CC) -c ./Source_Files/first_pass.c $(CFLAGS) -o $@
+
 codegen.o: ./Source_Files/codegen.c $(GLOBAL_DEPS)
 	$(CC) -c ./Source_Files/codegen.c $(CFLAGS) -o $@
+
+second_pass.o: ./Source_Files/second_pass.c $(GLOBAL_DEPS)
+	$(CC) -c ./Source_Files/second_pass.c $(CFLAGS) -o $@
 
 #parser.o: ./Source_Files/parser.c $(GLOBAL_DEPS)
 #	$(CC) -c ./Source_Files/parser.c $(CFLAGS) -o $@

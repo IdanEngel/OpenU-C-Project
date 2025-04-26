@@ -7,6 +7,8 @@ int symbol_count = 0;
 CodeRow code_table[MAX_CODE_ROWS];
 int code_count = 0;
 
+
+
 int IC = 100;
 int DC = 0;
 int ICF = 0;

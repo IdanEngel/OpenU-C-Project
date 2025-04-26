@@ -1,90 +1,188 @@
-/* second_pass.c */
-
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
-#include "../Header_Files/second_pass.h"
+#include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/symbol_table.h"
-#include "../Header_Files/parser_old.h"
-#include "../Header_Files/errors.h"
 #include "../Header_Files/utils.h"
-#include "../Header_Files/output.h"
+#include "../Header_Files/codegen.h"
+#include "../Header_Files/assembler.h"
 
-#define MAX_LINE_LENGTH 81
+#define MAX_LINE_LENGTH 31
 
 
 
-int second_pass(const char *am_file, Symbol *symbol_table, int symbol_count,
-                unsigned short *code, int code_count,
-                unsigned short *data, int data_count,
-                int IC, int DC, int *error_flag) {
 
-    FILE *fp;
-    char line[MAX_LINE_LENGTH];
-    int line_num = 0;
-    int i;
-    EntryLabel entries[MAX_SYMBOLS];
-    int entry_count = 0;
-    ExternUse externs[MAX_SYMBOLS];
-    int extern_count = 0;
+void second_pass(const char *filename) {
+    FILE *file = fopen(filename, "r");
+    char line[MAX_LINE_LENGTH], *bin, *command, *operands;
+    int line_number = 0, code_index = 0, i, k, word_offset;
+    const Operation *op;
+    unsigned int value;
 
-    *error_flag = 0;
-
-    fp = fopen(am_file, "r");
-    if (!fp) {
-        report_error("Failed to open file for second pass", am_file, 0);
-        return 0;
+    if (!file) {
+        printf("Error: cannot open file %s\n", filename);
+        error_flag = 1;
+        return;
     }
 
-    while (fgets(line, MAX_LINE_LENGTH, fp)) {
-        Line parsed = parse_line(line, ++line_num);
+    while (fgets(line, sizeof(line), file)) {
+        line_number++;
+        trim_leading_spaces(line);
+        if (line[0] == ';' || line[0] == '\0') continue;
 
-        if (parsed.error) {
-            report_error(parsed.error_msg, am_file, line_num);
-            *error_flag = 1;
-            continue;
+        if (strchr(line, ':')) {
+            memmove(line, strchr(line, ':') + 1, strlen(strchr(line, ':')));
+            trim_leading_spaces(line);
         }
 
-        /* Handle .entry */
-        if (parsed.is_entry && parsed.args[0]) {
-            int idx = find_symbol(symbol_table, symbol_count, parsed.args[0]);
-            if (idx >= 0 && symbol_table[idx].type != LABEL_EXTERN) {
-                symbol_table[idx].type = LABEL_ENTRY;
-                strcpy(entries[entry_count].name, symbol_table[idx].name);
-                entries[entry_count].address = symbol_table[idx].address;
-                entry_count++;
-            } else {
-                report_error("Invalid or undefined .entry label", am_file, line_num);
-                *error_flag = 1;
+        command = strtok(line, " \t\n");
+        if (!command) continue;
+
+        op = get_operation(command);
+        if (!op) continue; /* skip .data, .string, etc */
+
+        operands = strtok(NULL, "\n");
+        word_offset = 1; /* Start after the instruction word */
+
+
+        if (operands) {
+            char *token = strtok(operands, ", ");
+            while (token) {
+                trim_leading_spaces(token);
+
+                if (token[0] != '#' && !is_register(token)) {
+                    const char *label_name = (token[0] == '&') ? token + 1 : token;
+                    int j;
+                    int found = 0;
+                    for (j = 0; j < symbol_count; j++) {
+                        if (strcmp(symbol_table[j].name, label_name) == 0) {
+                            found = 1;
+                            bin = code_table[code_index + word_offset].binary;
+                            if (token[0] == '&') {
+                                /* Calculate relative offset from next instruction */
+                                value = symbol_table[j].address - (code_table[code_index].address);
+                                for (k = 20; k >= 0; k--) {
+                                    bin[20 - k] = ((value >> k) & 1) + '0';
+                                }
+                                strcpy(bin + 21, "100"); /* ARE = 100 for relative */
+                            } else if (symbol_table[j].is_external) {
+                                strcpy(bin, "000000000000000000000001");
+                                strcpy(extern_use_table[extern_use_count].label, symbol_table[j].name);
+                                extern_use_table[extern_use_count].address = code_table[code_index + word_offset].
+                                        address;
+                                extern_use_count++;
+                            } else if (symbol_table[j].is_entry) {
+                            } else {
+                                value = symbol_table[j].address;
+                                for (k = 20; k >= 0; k--) {
+                                    bin[20 - k] = ((value >> k) & 1) + '0';
+                                }
+                                strcpy(bin + 21, "010");
+                            }
+                            break;
+                        }
+                    }
+                    if (found == 0) {
+                        printf("[File %s, Line %d] Error: Undefined label '%s'\n", filename, line_number, label_name);
+                        error_flag = 1;
+                    }
+                    word_offset++;
+                } else if (token[0] == '#') {
+                    word_offset++;
+                } /* Do not increment word_offset for registers alone */
+
+                token = strtok(NULL, ", ");
+            }
+
+            code_index += word_offset;
+        } else {
+            code_index++;
+        }
+    }
+
+    fclose(file);
+
+    printf("\n Second Code Table (ICF = %d, DCF = %d):\n", ICF, DCF);
+    for (i = 0; i < code_count; i++) {
+        printf("%04d %s\n", code_table[i].address, code_table[i].binary);
+    }
+}
+
+
+void create_output_files(const char *basename) {
+    FILE *ob_file, *ext_file, *ent_file, *input_file;
+    char ob_name[100], ext_name[100], ent_name[100], am_name[100];
+    char line[MAX_LINE_LENGTH];
+    int i, line_number = 0;
+    int found;
+    char *command;
+
+    /* Process .entry directives from .am file */
+    sprintf(am_name, "%s.am", basename);
+    input_file = fopen(am_name, "r");
+    if (input_file) {
+        while (fgets(line, sizeof(line), input_file)) {
+            line_number++;
+            command = strtok(line, " \t\n");
+            if (command && strcmp(command, ".entry") == 0) {
+                char *entry_label = strtok(NULL, " \t\n");
+                if (entry_label) {
+                    found = 0;
+                    for (i = 0; i < symbol_count; i++) {
+                        if (strcmp(symbol_table[i].name, entry_label) == 0) {
+                            symbol_table[i].is_entry = 1;
+                            found = 1;
+                            break;
+                        }
+                    }
+                    if (!found) {
+                        report_errors(basename, line_number, "Error: .entry label is not found in symbol table \n");
+                    }
+                }
             }
         }
+        fclose(input_file);
     }
-    fclose(fp);
 
-    /* Step 2: Patch labels in code[] */
+    /* Create .ob file */
+    sprintf(ob_name, "%s.ob", basename);
+    ob_file = fopen(ob_name, "w");
+    if (!ob_file) {
+        printf("Error: Failed to create output file %s\n", ob_name);
+        return;
+    }
+    fprintf(ob_file, "     %d %d\n", ICF - 100, DCF);
     for (i = 0; i < code_count; i++) {
-        /* Placeholder values like 9999 are used to mark "needs patching" */
-        if (code[i] == 9999) {
-            report_error("Unresolved label in code[] — you must mark with label info during 1st pass", am_file, 0);
-            *error_flag = 1;
+        unsigned int value = 0;
+        int j;
+        for (j = 0; j < 24; j++) {
+            value <<= 1;
+            if (code_table[i].binary[j] == '1') {
+                value |= 1;
+            }
         }
+        fprintf(ob_file, "%07d %06x\n", code_table[i].address, value);
+    }
+    fclose(ob_file);
 
-        /* If in first pass you tagged labels with sentinel value (e.g., 0xFFFF), replace them here.
-           We assume you've marked unresolved words with label reference index or name. */
+    /* Create .ext file */
+    sprintf(ext_name, "%s.ext", basename);
+    ext_file = fopen(ext_name, "w");
+    if (ext_file) {
+        for (i = 0; i < extern_use_count; i++) {
+            fprintf(ext_file, "%s %07d\n", extern_use_table[i].label, extern_use_table[i].address);
+        }
+        fclose(ext_file);
     }
 
-    /* Step 3: Merge code and data */
-    for (i = 0; i < data_count; i++) {
-        code[code_count + i] = data[i];
+    /* Create .ent file */
+    sprintf(ent_name, "%s.ent", basename);
+    ent_file = fopen(ent_name, "w");
+    if (ent_file) {
+        for (i = 0; i < symbol_count; i++) {
+            if (symbol_table[i].is_entry) {
+                fprintf(ent_file, "%s %07d\n", symbol_table[i].name, symbol_table[i].address);
+            }
+        }
+        fclose(ent_file);
     }
-
-    /* Step 4: Write output files */
-    write_object_file(am_file, code, code_count + data_count, IC, DC);
-    write_entry_file(am_file, entries, entry_count);
-    write_extern_file(am_file, externs, extern_count);
-
-    if (*error_flag)
-        return 0;
-
-    return 1;
 }
