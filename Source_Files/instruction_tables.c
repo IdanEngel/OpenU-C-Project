@@ -40,6 +40,10 @@ const int operations_count = sizeof(operations_table) / sizeof(operations_table[
 int is_register(const char* token) {
     return strlen(token) == 2 && token[0] == 'r' && token[1] >= '0' && token[1] <= '7';
 }
+/* Determine if a string looks like a register (r<number>) */
+
+int looks_like_register(const char *operand) { return operand[0] == 'r'; }
+
 
 /* Find operation by name */
 const Operation* get_operation(const char* name) {

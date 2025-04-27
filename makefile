@@ -2,18 +2,13 @@
 CC = gcc
 CFLAGS = -ansi -Wall -pedantic -g
 EXE_DEPS = assembler.o macro_expand.o first_pass.o utils.o instruction_tables.o codegen.o second_pass.o
-# Input/output files
-INPUT_AS_FILES = $(wildcard ./*.as)
-
-#INPUT_AS = testprog.as
-#OUTPUT_AM = test.am
 
 # Executable
-assembler: $(EXE_DEPS) $(GLOBAL_DEPS)
+assembler: $(EXE_DEPS)
 	$(CC) -g $(EXE_DEPS) $(CFLAGS) -o $@
 
 # Object file rules
-assembler.o: ./Source_Files/assembler.c $(GLOBAL_DEPS)
+assembler.o: ./Source_Files/assembler.c
 	$(CC) -c ./Source_Files/assembler.c $(CFLAGS) -o $@
 
 utils.o: ./Source_Files/utils.c ./Header_Files/utils.h
@@ -22,29 +17,23 @@ utils.o: ./Source_Files/utils.c ./Header_Files/utils.h
 instruction_tables.o: ./Source_Files/instruction_tables.c ./Header_Files/instruction_tables.h
 	$(CC) -c ./Source_Files/instruction_tables.c $(CFLAGS) -o $@
 
-macro_expand.o: ./Source_Files/macro_expand.c $(GLOBAL_DEPS)
+macro_expand.o: ./Source_Files/macro_expand.c
 	$(CC) -c ./Source_Files/macro_expand.c  $(CFLAGS) -o $@
 
-first_pass.o: ./Source_Files/first_pass.c $(GLOBAL_DEPS)
+first_pass.o: ./Source_Files/first_pass.c
 	$(CC) -c ./Source_Files/first_pass.c $(CFLAGS) -o $@
 
-codegen.o: ./Source_Files/codegen.c $(GLOBAL_DEPS)
+codegen.o: ./Source_Files/codegen.c
 	$(CC) -c ./Source_Files/codegen.c $(CFLAGS) -o $@
 
-second_pass.o: ./Source_Files/second_pass.c $(GLOBAL_DEPS)
+second_pass.o: ./Source_Files/second_pass.c
 	$(CC) -c ./Source_Files/second_pass.c $(CFLAGS) -o $@
 
 
-
-# Run assembler on all input files
+# Run assembler
 run: assembler
-	./assembler
-#	for file in $(INPUT_AS_FILES); do \
-#		base=$${file%.as}; \
-#		echo "Running assembler on $$file..."; \
-#		./assembler $$base $$file; \
-#	done
+	./assembler $(FILES)
 
 # Clean temporary files
 clean:
-	rm -f *.o *.am *.ob *.ent *.ext assembler
+	rm -f *.o *.am Output_Files/*.ob Output_Files/*.ent Output_Files/*.ext assembler

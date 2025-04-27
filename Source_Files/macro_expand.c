@@ -14,14 +14,20 @@ Macro macros[MAX_MACRO_COUNT];
 int macro_count = 0;
 
 
-
+/*
+ * Remove trailing spaces and newline characters from the end of a line.
+ * Modifies the input string directly.
+ */
 void trim_trailing_spaces(char *line) {
     int len = strlen(line);
     while (len > 0 && isspace((unsigned char)line[len - 1])) {
         line[--len] = '\0';
     }
 }
-
+/*
+ * Extract the leading whitespace (spaces and tabs) from a line.
+ * Stores the whitespace sequence into 'out'.
+ */
 void get_leading_whitespace(const char *line, char *out) {
     int i = 0;
     while (line[i] == ' ' || line[i] == '\t') {
@@ -30,7 +36,11 @@ void get_leading_whitespace(const char *line, char *out) {
     }
     out[i] = '\0';
 }
-
+/*
+ * Check if a line indicates the start of a macro definition (mcro).
+ * If so, extracts the macro name into 'name_out'.
+ * Returns 1 if a macro start is detected, 0 otherwise.
+ */
 int is_macro_start(const char *line, char *name_out) {
     if (strncmp(line, "mcro", 4) == 0 && isspace(line[4])) {
         const char *p = line + 4;
@@ -41,11 +51,17 @@ int is_macro_start(const char *line, char *name_out) {
     }
     return 0;
 }
-
+/*
+ * Check if a line indicates the end of a macro definition (mcroend).
+ * Returns 1 if end of macro is detected, 0 otherwise.
+ */
 int is_macro_end(const char *line) {
     return strncmp(line, "mcroend", 7) == 0;
 }
-
+/*
+ * Search for a macro by its name in the stored macro table.
+ * Returns the index of the macro if found, or -1 if not found.
+ */
 int find_macro(const char *name) {
     int i;
     for (i = 0; i < macro_count; i++) {
@@ -55,7 +71,10 @@ int find_macro(const char *name) {
     }
     return -1;
 }
-
+/*
+ * Store a new macro definition (name and content) into the macro table.
+ * Reports an error if too many macros are defined or if a duplicate is found.
+ */
 void store_macro(const char *input_filename, const char *name, const char *content, int line_number) {
     if (!isalpha(name[0])) {
         report_errors(input_filename, line_number, "Macro name must start with a letter.");
@@ -71,7 +90,12 @@ void store_macro(const char *input_filename, const char *name, const char *conte
         macro_count++;
     }
 }
-
+/*
+ * Preprocess the input file:
+ * - Expand all macro invocations.
+ * - Replace macro names with their corresponding content.
+ * - Save the processed result into the output file (.am file).
+ */
 void preprocess_macros(const char *input_filename, const char *output_filename) {
     FILE *input = fopen(input_filename, "r");
     FILE *output = fopen(output_filename , "w");

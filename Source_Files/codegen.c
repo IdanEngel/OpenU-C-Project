@@ -45,6 +45,10 @@ const Operation operations[] = {
     {"stop", 15, 0}
 };
 
+/*
+ * Find and return the opcode value for a given mnemonic (operation name).
+ * Returns -1 if the mnemonic is not found.
+ */
 static int get_opcode(const char *mnemonic) {
     int i;
     for (i = 0; i < 16; i++) {
@@ -53,7 +57,10 @@ static int get_opcode(const char *mnemonic) {
     }
     return -1;
 }
-
+/*
+ * Find and return the funct value (secondary function code) for a given operation name.
+ * Returns -1 if the operation is not found.
+ */
 int get_funct(const char *opcode_name) {
     int i;
     for (i = 0; i < 16; i++) {
@@ -62,18 +69,25 @@ int get_funct(const char *opcode_name) {
     }
     return -1;
 }
-
-void int_to_binary(int value, int width, char *output) {
+/*
+ * Convert an integer value into a binary string representation of a given width.
+ * The output is stored as a null-terminated string in the 'output' buffer.
+ */
+void int_to_binary(const int value, const int width, char *output) {
     int i;
     for (i = width - 1; i >= 0; i--) {
         output[width - 1 - i] = ((value >> i) & 1) ? '1' : '0';
     }
     output[width] = '\0';
 }
-
+/*
+ * Encode a parsed instruction (given as a Line struct) into machine code words.
+ * Fills the 'code' array starting from the position pointed by 'IC'.
+ * Returns 1 on success, or 0 if an invalid opcode was encountered.
+ */
 int encode_instruction_binary(Line line, unsigned int *code, int *IC) {
-    int opcode = get_opcode(line.opcode);
-    int funct = get_funct(line.opcode);
+    const int opcode = get_opcode(line.opcode);
+    const int funct = get_funct(line.opcode);
     unsigned int word = 0;
     int src_mode = 0, dest_mode = 0;
     int src_reg = 0, dest_reg = 0;

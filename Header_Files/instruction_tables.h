@@ -22,6 +22,7 @@ extern const Operation operations_table[];
 extern const int operations_count;
 
 int is_register(const char* token);
+int looks_like_register(const char *operand);
 const Operation* get_operation(const char* name);
 AddressingMode get_addressing_mode(const char* operand);
 int get_expected_register_count(const char* opcode_name);

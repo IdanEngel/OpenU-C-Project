@@ -3,7 +3,6 @@
 #include "../Header_Files/instruction_tables.h"
 #include "../Header_Files/symbol_table.h"
 #include "../Header_Files/utils.h"
-#include "../Header_Files/codegen.h"
 #include "../Header_Files/assembler.h"
 
 #define MAX_LINE_LENGTH 31
@@ -14,9 +13,11 @@
 void second_pass(const char *filename) {
     FILE *file = fopen(filename, "r");
     char line[MAX_LINE_LENGTH], *bin, *command, *operands;
-    int line_number = 0, code_index = 0, i, k, word_offset;
+    int line_number = 0, code_index = 0, k, word_offset;
     const Operation *op;
     unsigned int value;
+    char error_msg[100];
+
 
     if (!file) {
         printf("Error: cannot open file %s\n", filename);
@@ -81,8 +82,9 @@ void second_pass(const char *filename) {
                             break;
                         }
                     }
-                    if (found == 0) {
-                        printf("[File %s, Line %d] Error: Undefined label '%s'\n", filename, line_number, label_name);
+                    if (found == 0 && looks_like_register(token) == 0) {
+                        sprintf(error_msg, "Undefined label name: %s", label_name);
+                        report_errors(filename, line_number, error_msg);
                         error_flag = 1;
                     }
                     word_offset++;
@@ -101,10 +103,6 @@ void second_pass(const char *filename) {
 
     fclose(file);
 
-    printf("\n Second Code Table (ICF = %d, DCF = %d):\n", ICF, DCF);
-    for (i = 0; i < code_count; i++) {
-        printf("%04d %s\n", code_table[i].address, code_table[i].binary);
-    }
 }
 
 
@@ -115,6 +113,7 @@ void create_output_files(const char *basename) {
     int i, line_number = 0;
     int found;
     char *command;
+    char error_msg[100];
 
     /* Process .entry directives from .am file */
     sprintf(am_name, "%s.am", basename);
@@ -135,7 +134,8 @@ void create_output_files(const char *basename) {
                         }
                     }
                     if (!found) {
-                        report_errors(basename, line_number, "Error: .entry label is not found in symbol table \n");
+                        sprintf(error_msg, "Error: .entry label %s not found in symbol table", entry_label);
+                        report_errors(basename, line_number, error_msg);
                     }
                 }
             }
@@ -144,7 +144,7 @@ void create_output_files(const char *basename) {
     }
 
     /* Create .ob file */
-    sprintf(ob_name, "%s.ob", basename);
+    sprintf(ob_name, "Output_Files/%s.ob", basename);
     ob_file = fopen(ob_name, "w");
     if (!ob_file) {
         printf("Error: Failed to create output file %s\n", ob_name);
@@ -165,7 +165,7 @@ void create_output_files(const char *basename) {
     fclose(ob_file);
 
     /* Create .ext file */
-    sprintf(ext_name, "%s.ext", basename);
+    sprintf(ext_name, "Output_Files/%s.ext", basename);
     ext_file = fopen(ext_name, "w");
     if (ext_file) {
         for (i = 0; i < extern_use_count; i++) {
@@ -175,7 +175,7 @@ void create_output_files(const char *basename) {
     }
 
     /* Create .ent file */
-    sprintf(ent_name, "%s.ent", basename);
+    sprintf(ent_name, "Output_Files/%s.ent", basename);
     ent_file = fopen(ent_name, "w");
     if (ent_file) {
         for (i = 0; i < symbol_count; i++) {

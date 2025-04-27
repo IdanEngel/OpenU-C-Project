@@ -26,20 +26,18 @@ int DC = 0;
 int ICF = 0;
 int DCF = 0;
 
+/*
+ * Check if the line is a comment or empty.
+ * Returns 1 if it is a comment or empty, 0 otherwise.
+ */
 int is_comment_or_empty(const char *line) {
     return line[0] == ';' || line[0] == '\0';
 }
 
 /*
-void reset_global_data(void) {
-    symbol_count = 0;
-    code_count = 0;
-    extern_use_count = 0;
-    IC = 100;
-    DC = 0;
-    error_flag = 0;
-}*/
-
+ * Count the number of operands in a line containing instruction operands.
+ * Returns the number of operands (0, 1, or 2).
+ */
 int count_operands(const char *operands_line) {
     int count = 0;
     char temp[MAX_LINE_LENGTH];
@@ -56,7 +54,10 @@ int count_operands(const char *operands_line) {
     return count;
 }
 
-
+/*
+ * Check if a given label name is valid.
+ * A valid label must start with a letter and consist of letters and digits only.
+ */
 int is_valid_label(const char *label) {
     int i;
     if (!isalpha(label[0]))
@@ -69,7 +70,9 @@ int is_valid_label(const char *label) {
         return 0;
     return 1;
 }
-
+/*
+ * Check if a label already exists in the symbol table.
+ */
 int is_label_duplicate(const char *label) {
     int i;
     for (i = 0; i < symbol_count; i++) {
@@ -79,6 +82,14 @@ int is_label_duplicate(const char *label) {
     }
     return 0;
 }
+/*
+ * Add a new symbol to the symbol table.
+ * name - the label name.
+ * address - the memory address associated with the label.
+ * type - CODE, DATA, EXTERNAL.
+ * is_entry - 1 if the label is an entry point, 0 otherwise.
+ * is_external - 1 if the label is external, 0 otherwise.
+ */
 
 void add_symbol(const char *name, int address, SymbolType type, int is_entry,
                 int is_external) {
@@ -91,7 +102,10 @@ void add_symbol(const char *name, int address, SymbolType type, int is_entry,
         symbol_count++;
     }
 }
-
+/*
+ * Add a new row to the code table at the specified address.
+ * Used for both instructions and data.
+ */
 void add_code_row(int address) {
     if (code_count < MAX_CODE_ROWS) {
         code_table[code_count].address = address;
@@ -100,12 +114,17 @@ void add_code_row(int address) {
     }
 }
 
+/*
+ * Check if the operand is a valid register (e.g., r0, r1, ..., r7).
+ */
 int is_valid_register(const char *operand) {
     const int result = operand[0] == 'r' && isdigit(operand[1]) && operand[2] == '\0' &&
-                 operand[1] >= '0' && operand[1] <= '7';
+                       operand[1] >= '0' && operand[1] <= '7';
     return result;
 }
-
+/*
+ * Check if a string represents a valid signed integer number.
+ */
 int is_valid_number(const char *s) {
     if (*s == '-' || *s == '+')
         s++;
@@ -119,16 +138,17 @@ int is_valid_number(const char *s) {
     return 1;
 }
 
-int looks_like_register(const char *operand) { return operand[0] == 'r'; }
-
-int count_instruction_words(const Operation *op, char *operands_line,
-                            const char *filename, const int line_number) {
+/*
+ * Count how many words the instruction will occupy in memory,
+ * based on the operation type and its operands.
+ */
+int count_instruction_words(const Operation *op, char *operands_line, const char *filename, const int line_number) {
     int count = 1;
     const char *src = NULL;
     const char *dest = NULL;
     const char *extraOp = NULL;
     char operands_copy[MAX_LINE_LENGTH];
-    /*const char *operands;*/
+    char error_msg[100];
 
 
     AddressingMode src_mode = -1, dest_mode = -1;
@@ -147,7 +167,8 @@ int count_instruction_words(const Operation *op, char *operands_line,
             dest_mode = get_addressing_mode(dest);
             if (looks_like_register(dest)) {
                 if (!is_valid_register(dest)) {
-                    report_errors(filename, line_number, "Invalid register name.");
+                    sprintf(error_msg, "Invalid register name: %s", dest);
+                    report_errors(filename, line_number, error_msg);
                 }
             }
             if (dest_mode != REGISTER)
@@ -159,19 +180,19 @@ int count_instruction_words(const Operation *op, char *operands_line,
         char operand_split[MAX_LINE_LENGTH];
         strncpy(operand_copy, operands_line, MAX_LINE_LENGTH);
         strncpy(operand_split, operands_line, MAX_LINE_LENGTH);
-        /*operands = strtok(NULL, ", \t");*/
         strncpy(operands_copy, operands_line, MAX_LINE_LENGTH);
         if (count_operands(operands_line) == op_count && strchr(operand_copy, ',') == NULL && strchr(operand_copy, ' ')
             != NULL) {
             report_errors(filename, line_number, "Missing comma between operands.");
-            printf("strchr-> %s\n", strchr(operand_copy, ' '));
             src = strtok(operand_copy, " ");
             printf("operands_line-> %s\n", src);
             dest = strtok(NULL, " ");
             if (looks_like_register(src) && !is_valid_register(src)) {
-                report_errors(filename, line_number, "Invalid source operand register name.");
+                sprintf(error_msg, "Invalid source operand register name: %s", src);
+                report_errors(filename, line_number, error_msg);
             } else if (looks_like_register(dest) && !is_valid_register(dest)) {
-                report_errors(filename, line_number, "Invalid destination operand register name.");
+                sprintf(error_msg, "Invalid destination operand register name: %s", dest);
+                report_errors(filename, line_number, error_msg);
             }
         } else {
             char *first = strtok(operands_copy, " ,\t");
@@ -190,21 +211,20 @@ int count_instruction_words(const Operation *op, char *operands_line,
                     src_mode = get_addressing_mode(src);
                     if (looks_like_register(src)) {
                         if (!is_valid_register(src)) {
-                            report_errors(filename, line_number, "Invalid source operand register name.");
-                            return 1;
+                            sprintf(error_msg, "Invalid source operand register name: %s", src);
+                            report_errors(filename, line_number, error_msg);
                         }
                     }
                 }
                 dest = strtok(NULL, " ");
-
                 if (dest != NULL) {
                     while (isspace((unsigned char)*dest))
                         dest++;
                     dest_mode = get_addressing_mode(dest);
                     if (looks_like_register(dest)) {
                         if (!is_valid_register(dest)) {
-                            report_errors(filename, line_number,
-                                                    "Invalid destination operand register name.");
+                            sprintf(error_msg, "Invalid destination operand register name: %s", dest);
+                            report_errors(filename, line_number, error_msg);
                         }
                     }
                 }
@@ -224,31 +244,47 @@ int count_instruction_words(const Operation *op, char *operands_line,
 
     return count;
 }
-
-void binary_to_string(unsigned int word, char *out) {
+/*
+ * Convert a 24-bit word (unsigned int) into a string of '0' and '1' characters.
+ * Stores the result in the provided output buffer (out).
+ */
+void binary_to_string(const unsigned int word, char *out) {
     int i;
     for (i = 0; i < 24; i++) {
         out[23 - i] = (word & (1 << i)) ? '1' : '0';
     }
     out[24] = '\0';
 }
-
-void negative_int_to_binary(short value, char *binary_out) {
+/*
+ * Convert a negative short integer into a 24-bit binary string.
+ * Stores the result in the provided output buffer (binary_out).
+ */
+void negative_int_to_binary(const short value, char *binary_out) {
     int i;
-    unsigned int uval = (unsigned int) ((int) value & 0xFFFFFF); /* 24 bits signed */
+    const unsigned int uval = (unsigned int) ((int) value & 0xFFFFFF); /* 24 bits signed */
     for (i = 23; i >= 0; i--) {
         binary_out[23 - i] = ((uval >> i) & 1) ? '1' : '0';
     }
     binary_out[24] = '\0';
 }
-
+/*
+ * Perform the first pass of the assembler on the given file.
+ * This includes:
+ * - Label detection and validation.
+ * - Instruction size calculation.
+ * - Initial filling of the code and symbol tables.
+ * filename - the name of the .am file to process.
+ */
 void first_pass(const char *filename) {
     FILE *file;
-    char line[MAX_LINE_LENGTH], label[MAX_LABEL_LENGTH], *command, *token, *operands, operands_copy[MAX_LINE_LENGTH], *arg_token;
+    char line[MAX_LINE_LENGTH], label[MAX_LABEL_LENGTH], *command, *token, *operands, operands_copy[MAX_LINE_LENGTH], *
+            arg_token;
     const Operation *op;
     Line temp_line;
     int i, line_number = 0, data_index = 0, start_ic;
     short value;
+    char error_msg[100];
+
 
     file = fopen(filename, "r");
     if (!file) {
@@ -266,11 +302,13 @@ void first_pass(const char *filename) {
         if (strchr(line, ':')) {
             sscanf(line, "%[^:]", label);
             if (!is_valid_label(label)) {
-                report_errors(filename, line_number, "Invalid label name.");
+                sprintf(error_msg, "Invalid label name: %s", label);
+                report_errors(filename, line_number, error_msg);
                 continue;
             }
             if (is_label_duplicate(label)) {
-                report_errors(filename, line_number, "Duplicate label definition.");
+                sprintf(error_msg, "Duplicate label definition: %s", label);
+                report_errors(filename, line_number, error_msg);
                 continue;
             }
             memmove(line, strchr(line, ':') + 1, strlen(strchr(line, ':')));
@@ -335,7 +373,8 @@ void first_pass(const char *filename) {
 
         op = get_operation(command);
         if (!op) {
-            report_errors(filename, line_number, "Unknown instruction.");
+            sprintf(error_msg, "unknown instruction: %s", command);
+            report_errors(filename, line_number, error_msg);
             continue;
         }
 
@@ -382,20 +421,5 @@ void first_pass(const char *filename) {
     DCF = DC;
 
     fclose(file);
-    printf("\nSymbol Table:\n");
-    for (i = 0; i < symbol_count; i++) {
-        printf("%s -> %d [%s]\n", symbol_table[i].name, symbol_table[i].address,
-               symbol_table[i].type == CODE
-                   ? "CODE"
-                   : symbol_table[i].type == DATA
-                         ? "DATA"
-                         : symbol_table[i].type == EXTERNAL
-                               ? "EXTERN"
-                               : "ENTRY");
-    }
 
-    printf("\nCode Table (ICF = %d, DCF = %d):\n", ICF, DCF);
-    for (i = 0; i < code_count; i++) {
-        printf("%04d %s\n", code_table[i].address, code_table[i].binary);
-    }
 }

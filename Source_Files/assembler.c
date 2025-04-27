@@ -1,5 +1,4 @@
 #include <stdio.h>
-#include <dirent.h>
 #include <string.h>
 #include "../Header_Files/assembler.h"
 #include "../Header_Files/first_pass.h"
@@ -11,12 +10,10 @@
 #define MAX_LABEL_LENGTH 31
 
 /* Forward declarations */
-void preprocess_macros(const char *output_filename, const char *input_filename);
+void preprocess_macros(const char *input_filename, const char *output_filename);
 
 void first_pass(const char *filename);
-
 void second_pass(const char *filename);
-
 void create_output_files(const char *basename);
 
 int error_flag = 0;
@@ -37,43 +34,73 @@ void reset_global_data(void) {
     error_flag = 0;
 }
 
-int main() {
-    struct dirent *de;
-    DIR *dr = opendir(".");
-    char input_filename[100];
-    char output_filename[100];
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
 
-    char filename[100];
 
-    /* Reding and working on all .as files  */
-    while ((de = readdir(dr)) != NULL) {
-        if (strstr(de->d_name, ".as")) {
-            printf("Processing file: %s\n", de->d_name);
-            strncpy(filename, de->d_name, strlen(de->d_name) - 3);
-            filename[strlen(de->d_name) - 3] = '\0';
 
-            strcpy(input_filename, filename);
-            strcat(input_filename, ".as");
 
-            strcpy(output_filename, filename);
-            strcat(output_filename, ".am");
+void process_file(const char *input_filename) {
+    char am_filename[100];
+    char base_name[100];
+    char *dot;
 
-            preprocess_macros(input_filename, output_filename);
-            if (error_flag == 0) {
-                printf("Finished macro expansion successfully. Starting first an second pass...\n");
-                first_pass(output_filename);
-                second_pass(output_filename);
-            }
-            if(error_flag == 0) {
-                printf("Scanned first and second pass successfully. Creating output files...\n");
-                create_output_files(filename);
-            } else {
-                printf("\033[1;31mErrors detected: \033[0m No output files created!\n");
-            }
-            reset_global_data();
-        }
+    /* copy the base name */
+    strncpy(base_name, input_filename, sizeof(base_name));
+    base_name[sizeof(base_name) - 1] = '\0';
+
+    /* deleting .as files ending to create .am file ending */
+    dot = strrchr(base_name, '.');
+    if (dot && strcmp(dot, ".as") == 0) {
+        *dot = '\0'; /* מסיר את הסיומת */
+    } else {
+        printf("Error: file %s does not have .as extension\n", input_filename);
+        return;
     }
 
-    closedir(dr);
+    printf("\nProcessing file: %s\n", input_filename);
+
+    /* Macro file name checking */
+    if (strlen(base_name) + 3 >= sizeof(am_filename)) {
+        printf("Error: File name too long.\n");
+        return;
+    }
+    strcpy(am_filename, base_name);
+    strcat(am_filename, ".am");
+    printf("\033[1;32mMacro Preprocessing:\033[0m creating file: %s\n", am_filename);
+    preprocess_macros(input_filename, am_filename);
+
+    /* First Pass */
+    printf("\033[1;32mFirst And Second Pass:\033[0m scanning file: %s\n", am_filename);
+    first_pass(am_filename);
+    /* Second Pass */
+    second_pass(am_filename);
+
+    /* Checking if any errors occurred to create output files */
+    if (!error_flag) {
+        printf("\033[1;32mScans ran successfully, Creating output files...\033[0m\n");
+        create_output_files(base_name);
+    } else {
+        printf("\033[1;31mErrors detected!\033[0m No output files created.\n");
+    }
+
+    /* global variables reset before next file read */
+    reset_global_data();
+}
+
+
+int main(const int argc, char *argv[]) {
+    int i;
+
+    if (argc < 2) {
+        printf("Usage: %s file1.as [file2.as ...]\n", argv[0]);
+        return 1;
+    }
+
+    for (i = 1; i < argc; i++) {
+        process_file(argv[i]);
+    }
+
     return 0;
 }
